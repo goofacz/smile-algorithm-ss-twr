@@ -15,9 +15,12 @@
 
 import os.path
 import argparse
-import numpy
+import numpy as np
+import scipy.constants as scc
 from smile.frames import Frames
 from smile.nodes import Nodes
+from smile.filter import Filter
+from anchors import Anchors
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process Single Sided Two-Way ranging data.')
@@ -27,38 +30,59 @@ if __name__ == '__main__':
     logs_directory_path = arguments.logs_directory_path[0]
 
     # Load data from CSV files
-    anchors = Nodes(os.path.join(logs_directory_path, 'ss_twr_mobile_nodes.csv'))
-    mobiles = Nodes(os.path.join(logs_directory_path, 'ss_twr_mobile_nodes.csv'))
-    frames = Frames(os.path.join(logs_directory_path, 'ss_twr_frames.csv'))
+    anchors = Anchors.load_csv(os.path.join(logs_directory_path, 'ss_twr_anchors.csv'))
+    mobiles = Nodes.load_csv(os.path.join(logs_directory_path, 'ss_twr_mobiles.csv'))
+    mobile_frames = Frames.load_csv(os.path.join(logs_directory_path, 'ss_twr_mobile_frames.csv'))
+    anchor_frames = Frames.load_csv(os.path.join(logs_directory_path, 'ss_twr_anchor_frames.csv'))
 
     # Construct POLL frames filter, i.e. transmitted frames ('TX' directions) sent by mobile node
     # (frames.mac_addresses[:, 0] equal to mobile nod'se MAC address)
-    poll_frames_condition = numpy.logical_and(frames.directions == 'TX',
-                                              frames.mac_addresses[:, 0] == mobiles.mac_addresses[0])
+    data_filter = Filter()
+    data_filter.equal("direction", hash('TX'))
+    data_filter.equal("source_mac_address", mobiles[0, "mac_address"])
+    poll_frames = data_filter.execute(mobile_frames)
 
     # Construct REPONSE frames filter, i.e. transmitted frames ('RX' directions) sent to mobile node
     # (frames.mac_addresses[:, 1] equal to mobile nod'se MAC address)
-    response_frames_condition = numpy.logical_and(frames.directions == 'RX',
-                                                  frames.mac_addresses[:, 1] == mobiles.mac_addresses[0])
+    data_filter = Filter()
+    data_filter.equal("direction", hash('RX'))
+    data_filter.equal("destination_mac_address", mobiles[0, "mac_address"])
+    response_frames = data_filter.execute(mobile_frames)
 
-    # Apply filters constructed above
-    response_frames = frames[response_frames_condition]
-    poll_frames = frames[poll_frames_condition]
+    # Here we will store distance between mobile node and three anchors, each row will contain value in meters and
+    # anchor's MAC address
+    distances = np.zeros((3, 2))
 
-    # Here we will store ToF between mobile node and three anchors, each row will contain ToF in ps and anchor's
-    # MAC address
-    time_of_flights = numpy.zeros((3, 2))
+    assert(np.unique(anchors["message_processing_time"]).shape == (1,))
+    processing_delay = anchors[0, "message_processing_time"]
+
+    c = scc.value('speed of light in vacuum')
+    c = c * 1e-12  # m/s -> m/ps
 
     # Iterate over POLL and RESPONSE frames
     sequence_numbers = (1, 2, 3)
     for i in range(len(sequence_numbers)):
         # Lookup POLL
         sequence_number = sequence_numbers[i]
-        poll_frame = poll_frames[poll_frames.sequence_numbers == sequence_number]
-        response_frame = response_frames[response_frames.sequence_numbers == sequence_number]
+        poll_frame = poll_frames[poll_frames["sequence_number"] == sequence_number]
+        response_frame = response_frames[response_frames["sequence_number"] == sequence_number]
 
         # Compute ToF and fill time_of_flights array
-        time_of_flights[i, 0] = response_frame.begin_timestamps[0, 0] - poll_frame.begin_positions[0, 0]
-        time_of_flights[i, 1] = response_frame.mac_addresses[0, 0]
+        tof = (response_frame[0, "begin_clock_timestamp"] - poll_frame[0, "begin_clock_timestamp"] - processing_delay) / 2
+        distances[i, 0] = tof * c
+        distances[i, 1] = response_frame[0, "destination_mac_address"]
+
+    A = np.zeros((3, 3))
+    A[:, (0, 1)] = -2 * anchors[0:3, "position_2d"]
+    A[:, 2] = 1
+
+    B = np.zeros((3, 3))
+    B[:, 0] = distances[:, 0]
+    B[:, (1, 2)] = anchors[0:3, "position_2d"]
+    B = np.power(B, 2)
+    B = B[:, 0] - B[:, 1] - B[:, 2]
+
+    position, _, _, _ = np.linalg.lstsq(A, B, rcond=None)
+    position = position[0:2]
 
     pass  # TODO

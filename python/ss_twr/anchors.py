@@ -13,3 +13,15 @@
 # along with this program.  If not, see http:#www.gnu.org/licenses/.
 #
 
+import numpy as np
+from smile.nodes import Nodes
+
+
+class Anchors(Nodes):
+    def __init__(self, *args):
+        super(Anchors, self).__init__()
+        self.column_names["message_processing_time"] = 4
+
+    @staticmethod
+    def load_csv(file_path):
+        return Anchors(np.loadtxt(file_path, delimiter=',', ndmin=2))
