@@ -33,14 +33,18 @@ static auto formatTimestamp = [](const auto& timestamp) { return timestamp.forma
 void AnchorApplication::initialize(int stage)
 {
   IdealApplication::initialize(stage);
-  if (stage == inet::INITSTAGE_PHYSICAL_ENVIRONMENT_2) {
-    auto& logger = getLogger();
-    framesLog = logger.obtainHandle("frames");
 
-    const auto& nicDriver = getNicDriver();
-    auto anchorsLog = logger.obtainHandle("anchor_nodes");
-    const auto entry = smile::csv_logger::compose(nicDriver.getMacAddress(), getCurrentTruePosition());
-    logger.append(anchorsLog, entry);
+  if (stage == inet::INITSTAGE_LOCAL) {
+    messageProcessingTime = SimTime{par("messageProcessingTime").longValue(), SIMTIME_MS};
+  }
+
+  if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
+    auto& logger = getLogger();
+    const auto handle = logger.obtainHandle("anchors");
+    const auto entry = csv_logger::compose(getMacAddress(), getCurrentTruePosition());
+    logger.append(handle, entry);
+
+    framesLog = logger.obtainHandle("anchor_frames");
   }
 }
 
@@ -63,8 +67,8 @@ void AnchorApplication::handleTxCompletionSignal(const smile::IdealTxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry =
-        smile::csv_logger::compose(completion, frame->getSrc(), frame->getDest(), frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
+                                                  frame->getSequenceNumber());
     logger.append(framesLog, entry);
   }
   else {
@@ -87,11 +91,11 @@ void AnchorApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry =
-        smile::csv_logger::compose(completion, frame->getSrc(), frame->getDest(), frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
+                                                  frame->getSequenceNumber());
     logger.append(framesLog, entry);
 
-    responseTxClockTime = clockTime() + SimTime{par("messageProcessingTime").longValue(), SIMTIME_MS};
+    responseTxClockTime = clockTime() + messageProcessingTime;
   }
   else {
     throw cRuntimeError{"Received RX completion signal for unexpected packet of type %s and name \"%s\"",

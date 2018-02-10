@@ -41,16 +41,20 @@ MobileApplication::~MobileApplication()
 void MobileApplication::initialize(int stage)
 {
   IdealApplication::initialize(stage);
-  if (stage == inet::INITSTAGE_PHYSICAL_ENVIRONMENT_2) {
-    auto& logger = getLogger();
-    framesLog = logger.obtainHandle("frames");
 
-    const auto& nicDriver = getNicDriver();
-    auto anchorsLog = logger.obtainHandle("mobile_nodes");
-    const auto entry = smile::csv_logger::compose(nicDriver.getMacAddress(), getCurrentTruePosition());
-    logger.append(anchorsLog, entry);
+  if (stage == inet::INITSTAGE_LOCAL) {
+    rangingRxTimeout = SimTime{par("rangingRxTimeout").longValue(), SIMTIME_MS};
   }
-  else if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
+
+  if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
+    auto& logger = getLogger();
+    const auto handle = logger.obtainHandle("mobiles");
+    const auto entry = csv_logger::compose(getMacAddress(), getCurrentTruePosition());
+    logger.append(handle, entry);
+
+    std::string handleName{"mobiles_beacons"};
+    framesLog = logger.obtainHandle("mobile_frames");
+
     rxTimeoutTimerMessage = std::make_unique<cMessage>("Ranging RX timeout");
     anchorAddresses.emplace_back("DE-AD-BE-EF-10-01");
     anchorAddresses.emplace_back("DE-AD-BE-EF-10-02");
@@ -71,8 +75,7 @@ void MobileApplication::handleSelfMessage(cMessage* message)
 
 void MobileApplication::handleIncommingMessage(cMessage* newMessage)
 {
-  std::unique_ptr<cMessage> message{newMessage};
-  handleResponseFrame(smile::dynamic_unique_ptr_cast<ResponseFrame>(std::move(message)));
+  std::unique_ptr<cMessage>{newMessage};
 }
 
 void MobileApplication::handleTxCompletionSignal(const smile::IdealTxCompletion& completion)
@@ -89,8 +92,8 @@ void MobileApplication::handleTxCompletionSignal(const smile::IdealTxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry =
-        smile::csv_logger::compose(completion, frame->getSrc(), frame->getDest(), frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
+                                                  frame->getSequenceNumber());
     logger.append(framesLog, entry);
   }
   else {
@@ -113,8 +116,8 @@ void MobileApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry =
-        smile::csv_logger::compose(completion, frame->getSrc(), frame->getDest(), frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
+                                                  frame->getSequenceNumber());
     logger.append(framesLog, entry);
   }
   else {
@@ -134,18 +137,11 @@ void MobileApplication::startRanging()
 
   sendDelayed(frame.release(), 0, "out");
 
-  const auto rxTimeout = clockTime() + SimTime{par("rangingRxTimeout").longValue(), SIMTIME_MS};
+  const auto rxTimeout = clockTime() + rangingRxTimeout;
   scheduleAt(rxTimeout, rxTimeoutTimerMessage.get());
 
   pollTxBeginTimestamp = SimTime::ZERO;
   responseRxBeginTimestamp = SimTime::ZERO;
-}
-
-void MobileApplication::handleResponseFrame(std::unique_ptr<ResponseFrame> frame)
-{
-  const auto processingTime = SimTime{par("messageProcessingTime").longValue(), SIMTIME_MS};
-  const auto tof = ((responseRxBeginTimestamp - pollTxBeginTimestamp) - processingTime) / 2;
-  EV_INFO << "ToF " << formatTimestamp(tof) << endl;
 }
 
 }  // namespace ss_twr

@@ -47,16 +47,15 @@ class MobileApplication : public smile::IdealApplication
 
   void startRanging();
 
-  void handleResponseFrame(std::unique_ptr<ResponseFrame> frame);
-
   static const std::string pollFrameName;
   static const std::string responseFrameName;
 
   std::unique_ptr<cMessage> rxTimeoutTimerMessage;
   std::vector<inet::MACAddress> anchorAddresses;
 
-  SimTime pollTxBeginTimestamp{0};
-  SimTime responseRxBeginTimestamp{0};
+  SimTime rangingRxTimeout;
+  SimTime pollTxBeginTimestamp;
+  SimTime responseRxBeginTimestamp;
   smile::Logger::Handle framesLog;
   unsigned long sequenceNumber{0};
 };

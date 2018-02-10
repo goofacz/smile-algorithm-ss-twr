@@ -20,6 +20,5 @@ simple AnchorApplication extends IdealApplication
 {
     parameters:
         @class(smile::algorithm::ss_twr::AnchorApplication);
-        int messageProcessingTime = default(4ms) @unit(ms);
-        int rangingRxTimeout = default(5ms) @unit(ms);
+        int messageProcessingTime = default(10ms) @unit(ms);
 }
