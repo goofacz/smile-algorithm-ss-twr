@@ -13,14 +13,16 @@
 # along with this program.  If not, see http:#www.gnu.org/licenses/.
 #
 
-import os.path
 import argparse
+import os.path
+
 import numpy as np
 import scipy.constants as scc
+
+from anchors import Anchors
+from smile.filter import Filter
 from smile.frames import Frames
 from smile.nodes import Nodes
-from smile.filter import Filter
-from anchors import Anchors
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process Single Sided Two-Way ranging data.')
@@ -53,7 +55,7 @@ if __name__ == '__main__':
     # anchor's MAC address
     distances = np.zeros((3, 2))
 
-    assert(np.unique(anchors["message_processing_time"]).shape == (1,))
+    assert (np.unique(anchors["message_processing_time"]).shape == (1,))
     processing_delay = anchors[0, "message_processing_time"]
 
     c = scc.value('speed of light in vacuum')
@@ -68,7 +70,8 @@ if __name__ == '__main__':
         response_frame = response_frames[response_frames["sequence_number"] == sequence_number]
 
         # Compute ToF and fill time_of_flights array
-        tof = (response_frame[0, "begin_clock_timestamp"] - poll_frame[0, "begin_clock_timestamp"] - processing_delay) / 2
+        tof = (response_frame[0, "begin_clock_timestamp"] - poll_frame[
+            0, "begin_clock_timestamp"] - processing_delay) / 2
         distances[i, 0] = tof * c
         distances[i, 1] = response_frame[0, "destination_mac_address"]
 

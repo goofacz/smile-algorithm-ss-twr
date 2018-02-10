@@ -15,13 +15,16 @@
 
 import unittest
 from io import StringIO
+
 import numpy as np
+
 from ss_twr.anchors import Anchors
 
 
 class TestAnchors(unittest.TestCase):
     def test_load_csv(self):
-        content = StringIO("17592186044417,0.000000,0.000000,0.000000,0\n17592186044418,75.000000,0.000000,0.000000,35000000000")
+        content = StringIO("17592186044417,0.000000,0.000000,0.000000,0\n" \
+                           "17592186044418,75.000000,0.000000,0.000000,35000000000")
 
         # Check whether data is loaded into correct array
         anchors = Anchors.load_csv(content)
