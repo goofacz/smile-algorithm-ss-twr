@@ -49,7 +49,7 @@ void MobileApplication::initialize(int stage)
   if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
     auto& logger = getLogger();
     const auto handle = logger.obtainHandle("mobiles");
-    const auto entry = csv_logger::compose(getMacAddress(), getCurrentTruePosition(), rangingRxTimeout);
+    const auto entry = csv_logger::compose(getMacAddress(), getCurrentTruePosition());
     logger.append(handle, entry);
 
     std::string handleName{"mobiles_beacons"};
