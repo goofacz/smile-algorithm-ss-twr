@@ -1,0 +1,46 @@
+*** OVERVIEW ***
+
+This simulation implements Single-sided Two Way Ranging method (SS-TWR).
+
+Single mobile node performs ranging with three anchor nodes deployed in
+neighborhood.
+
+*** Logs files format ***
+
+log_anchor_nodes.csv: list of anchors deployed in simulation
+File columns: 
+    1. MAC address
+    2. X coordinate
+    3. Y coordinate
+    4. Z coordinate
+
+log_mobile_nodes.csv: list of anchors deployed in simulation
+File columns: 
+    1. MAC address
+    2. initial true X coordinate
+    3. initial true Y coordinate
+    4. initial true Z coordinate
+
+log_frames.csv: list of all TX/RX operation details and frame content
+File columns:
+    1. Operation type (TX or RX)
+    2. Operation begin timestamp (node's clock)
+    3. Operation begin timestamp (simulation clock)
+
+    True node position at the beginning of the operation:
+    4. X coordinate
+    5. Y coordinate
+    6. Z coordinate
+
+    7. Operation end timestamp (node's clock)
+    8. Operation end timestamp (simulation clock)
+
+    True node position at the end of the operation:
+    9. X coordinate
+    10. Y coordinate
+    11. Z coordinate
+
+    Frame content:
+    12. Source MAC address
+    13. Destination MAC address
+    14. Sequence number

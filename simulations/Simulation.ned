@@ -1,0 +1,74 @@
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License
+// along with this program.  If not, see http://www.gnu.org/licenses/.
+// 
+
+package smile.algorithm.ss_twr.simulations;
+
+import smile.RadioNode;
+import smile.Logger;
+import smile.IdealClock;
+import smile.IdealRangingNicDriver;
+import inet.mobility.single.LinearMobility;
+import inet.physicallayer.idealradio.IdealRadioMedium;
+import inet.visualizer.integrated.IntegratedCanvasVisualizer;
+
+network Simulation
+{
+    submodules:
+        radioMedium: IdealRadioMedium {
+            @display("p=193,30");
+        }
+        
+        visualizer: IntegratedCanvasVisualizer {
+            @display("p=287,30");
+        }
+        
+        logger: Logger {
+            fileNamePrefix = "ss_twr";
+            overwrite = true;
+            @display("p=69,30");
+        }
+
+        mobileNode: RadioNode {
+            mobilityType = "LinearMobility";
+            applicationType = "MobileApplication";
+            nicDriverType = "IdealRangingNicDriver";
+            nicType = "IdealWirelessNic";
+            clockType = "IdealClock";
+        }
+
+        anchorNode1: RadioNode {
+            mobilityType = "LinearMobility";
+            applicationType = "AnchorApplication";
+            nicDriverType = "IdealRangingNicDriver";
+            nicType = "IdealWirelessNic";
+            clockType = "IdealClock";
+        }
+
+        anchorNode2: RadioNode {
+            mobilityType = "LinearMobility";
+            applicationType = "AnchorApplication";
+            nicDriverType = "IdealRangingNicDriver";
+            nicType = "IdealWirelessNic";
+            clockType = "IdealClock";
+        }
+
+        anchorNode3: RadioNode {
+            mobilityType = "LinearMobility";
+            applicationType = "AnchorApplication";
+            nicDriverType = "IdealRangingNicDriver";
+            nicType = "IdealWirelessNic";
+            clockType = "IdealClock";
+        }
+}
