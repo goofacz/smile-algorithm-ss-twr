@@ -19,7 +19,7 @@ import smile.IdealApplication;
 simple AnchorApplication extends IdealApplication
 {
     parameters:
-        @class(smile_examples::ss_twr::AnchorApplication);
+        @class(smile::algorithm::ss_twr::AnchorApplication);
         int messageProcessingTime = default(4ms) @unit(ms);
         int rangingRxTimeout = default(5ms) @unit(ms);
 }

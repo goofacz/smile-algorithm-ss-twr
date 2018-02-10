@@ -19,7 +19,7 @@ import smile.IdealApplication;
 simple MobileApplication extends IdealApplication
 {
     parameters:
-        @class(smile_examples::ss_twr::MobileApplication);
+        @class(smile::algorithm::ss_twr::MobileApplication);
         int messageProcessingTime = default(4ms) @unit(ms);
         int rangingRxTimeout = default(5ms) @unit(ms);
 }
