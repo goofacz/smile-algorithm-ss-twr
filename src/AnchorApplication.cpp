@@ -62,8 +62,7 @@ void AnchorApplication::handleTxCompletionSignal(const smile::IdealTxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
-                                                  frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
     logger.append(framesLog, entry);
   }
   else {
@@ -83,8 +82,7 @@ void AnchorApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
-                                                  frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
     logger.append(framesLog, entry);
 
     responseTxClockTime = clockTime() + messageProcessingTime;

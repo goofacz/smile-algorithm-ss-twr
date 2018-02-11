@@ -17,8 +17,8 @@
 #include <algorithm>
 
 #include "CsvLogger.h"
-#include "MobileApplication.h"
 #include "Frame_m.h"
+#include "MobileApplication.h"
 
 namespace smile {
 namespace algorithm {
@@ -83,7 +83,7 @@ void MobileApplication::handleIncommingMessage(cMessage* newMessage)
 {
   std::unique_ptr<cMessage>{newMessage};
 
-  const auto nextRangingBeginTimestamp = clockTime()  + SimTime{5, SIMTIME_MS};
+  const auto nextRangingBeginTimestamp = clockTime() + SimTime{5, SIMTIME_MS};
   scheduleAt(nextRangingBeginTimestamp, startRangingMessage.get());
   cancelEvent(rxTimeoutTimerMessage.get());
 }
@@ -100,8 +100,7 @@ void MobileApplication::handleTxCompletionSignal(const smile::IdealTxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
-                                                  frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
     logger.append(framesLog, entry);
   }
   else {
@@ -122,8 +121,7 @@ void MobileApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
     }
 
     auto& logger = getLogger();
-    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSrc(), frame->getDest(),
-                                                  frame->getSequenceNumber());
+    const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
     logger.append(framesLog, entry);
   }
   else {
