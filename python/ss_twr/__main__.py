@@ -15,11 +15,13 @@
 
 import argparse
 import os.path
+
 import numpy as np
+
+from algorithm import localize_mobile
 from anchors import Anchors
 from smile.frames import Frames
 from smile.nodes import Nodes
-from algorithm import localize_mobile
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process Single Sided Two-Way ranging data.')
