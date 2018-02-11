@@ -15,7 +15,7 @@
 
 import argparse
 import os.path
-
+import numpy as np
 from anchors import Anchors
 from smile.frames import Frames
 from smile.nodes import Nodes
@@ -39,4 +39,6 @@ if __name__ == '__main__':
         if results is None:
             results = mobile_results
         else:
-            results.a
+            results = np.concatenate((results, mobile_results), axis=0)
+
+    pass  # TODO
