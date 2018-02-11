@@ -18,7 +18,7 @@
 
 #include "CsvLogger.h"
 #include "MobileApplication.h"
-#include "PollFrame_m.h"
+#include "Frame_m.h"
 
 namespace smile {
 namespace algorithm {
@@ -29,12 +29,13 @@ Define_Module(MobileApplication);
 const std::string MobileApplication::pollFrameName{"POLL"};
 const std::string MobileApplication::responseFrameName{"RESPONSE"};
 
-static auto formatTimestamp = [](const auto& timestamp) { return timestamp.format(SIMTIME_FS, ".", "", true); };
-
 MobileApplication::~MobileApplication()
 {
   if (rxTimeoutTimerMessage) {
     cancelEvent(rxTimeoutTimerMessage.get());
+  }
+  if (startRangingMessage) {
+    cancelEvent(startRangingMessage.get());
   }
 }
 
@@ -56,19 +57,24 @@ void MobileApplication::initialize(int stage)
     framesLog = logger.obtainHandle("mobile_frames");
 
     rxTimeoutTimerMessage = std::make_unique<cMessage>("Ranging RX timeout");
+    startRangingMessage = std::make_unique<cMessage>("Start ranging");
+
     anchorAddresses.emplace_back("DE-AD-BE-EF-10-01");
     anchorAddresses.emplace_back("DE-AD-BE-EF-10-02");
     anchorAddresses.emplace_back("DE-AD-BE-EF-10-03");
+    anchorAddresses.emplace_back("DE-AD-BE-EF-10-04");
 
-    startRanging();
+    scheduleAt(clockTime(), startRangingMessage.get());
   }
 }
 
 void MobileApplication::handleSelfMessage(cMessage* message)
 {
   if (message == rxTimeoutTimerMessage.get()) {
-    // Start ranging with next anchor
-    std::rotate(anchorAddresses.begin(), std::next(anchorAddresses.begin()), anchorAddresses.end());
+    sequenceNumber = sequenceNumber + 3 - (sequenceNumber % 3);
+    startRanging();
+  }
+  else if (message == startRangingMessage.get()) {
     startRanging();
   }
 }
@@ -76,6 +82,10 @@ void MobileApplication::handleSelfMessage(cMessage* message)
 void MobileApplication::handleIncommingMessage(cMessage* newMessage)
 {
   std::unique_ptr<cMessage>{newMessage};
+
+  const auto nextRangingBeginTimestamp = clockTime()  + SimTime{5, SIMTIME_MS};
+  scheduleAt(nextRangingBeginTimestamp, startRangingMessage.get());
+  cancelEvent(rxTimeoutTimerMessage.get());
 }
 
 void MobileApplication::handleTxCompletionSignal(const smile::IdealTxCompletion& completion)
@@ -83,10 +93,8 @@ void MobileApplication::handleTxCompletionSignal(const smile::IdealTxCompletion&
   const auto& frame = completion.getFrame();
   if (pollFrameName == frame->getName()) {
     pollTxBeginTimestamp = completion.getOperationBeginClockTimestamp();
-    EV_INFO << "POLL transmission started at " << formatTimestamp(pollTxBeginTimestamp) << " and finished at "
-            << formatTimestamp(clockTime()) << endl;
 
-    const auto frame = dynamic_cast<const PollFrame*>(completion.getFrame());
+    const auto frame = dynamic_cast<const Frame*>(completion.getFrame());
     if (!frame) {
       throw cRuntimeError{"Received signal for %s message, expected PollFrame", frame->getClassName()};
     }
@@ -107,10 +115,8 @@ void MobileApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
   const auto& frame = completion.getFrame();
   if (responseFrameName == frame->getName()) {
     responseRxBeginTimestamp = completion.getOperationBeginClockTimestamp();
-    EV_INFO << "RESPONSE reception started at " << formatTimestamp(pollTxBeginTimestamp) << " and finished at "
-            << formatTimestamp(clockTime()) << endl;
 
-    const auto frame = dynamic_cast<const ResponseFrame*>(completion.getFrame());
+    const auto frame = dynamic_cast<const Frame*>(completion.getFrame());
     if (!frame) {
       throw cRuntimeError{"Received signal for %s message, expected ResponseFrame", frame->getClassName()};
     }
@@ -128,10 +134,8 @@ void MobileApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
 
 void MobileApplication::startRanging()
 {
-  sequenceNumber++;
-
   const auto& anchorAddress = anchorAddresses.front();
-  auto frame = createFrame<PollFrame>(anchorAddress, pollFrameName.c_str());
+  auto frame = createFrame<Frame>(anchorAddress, pollFrameName.c_str());
   frame->setBitLength(10);
   frame->setSequenceNumber(sequenceNumber);
 
@@ -142,6 +146,9 @@ void MobileApplication::startRanging()
 
   pollTxBeginTimestamp = SimTime::ZERO;
   responseRxBeginTimestamp = SimTime::ZERO;
+
+  sequenceNumber++;
+  std::rotate(anchorAddresses.begin(), std::next(anchorAddresses.begin()), anchorAddresses.end());
 }
 
 }  // namespace ss_twr

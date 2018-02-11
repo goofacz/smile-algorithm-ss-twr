@@ -14,7 +14,7 @@
 //
 
 #include "AnchorApplication.h"
-#include "ResponseFrame_m.h"
+#include "Frame_m.h"
 
 #include <CsvLogger.h>
 #include <utilities.h>
@@ -27,8 +27,6 @@ Define_Module(AnchorApplication);
 
 const std::string AnchorApplication::pollFrameName{"POLL"};
 const std::string AnchorApplication::responseFrameName{"RESPONSE"};
-
-static auto formatTimestamp = [](const auto& timestamp) { return timestamp.format(SIMTIME_FS, ".", "", true); };
 
 void AnchorApplication::initialize(int stage)
 {
@@ -51,17 +49,14 @@ void AnchorApplication::initialize(int stage)
 void AnchorApplication::handleIncommingMessage(cMessage* newMessage)
 {
   std::unique_ptr<cMessage> message{newMessage};
-  handlePollFrame(smile::dynamic_unique_ptr_cast<PollFrame>(std::move(message)));
+  handlePollFrame(smile::dynamic_unique_ptr_cast<Frame>(std::move(message)));
 }
 
 void AnchorApplication::handleTxCompletionSignal(const smile::IdealTxCompletion& completion)
 {
   const auto& frame = completion.getFrame();
   if (responseFrameName == frame->getName()) {
-    EV_INFO << "RESPONSE transmission started at " << formatTimestamp(completion.getOperationBeginClockTimestamp())
-            << " and finished at " << formatTimestamp(clockTime()) << endl;
-
-    const auto frame = dynamic_cast<const ResponseFrame*>(completion.getFrame());
+    const auto frame = dynamic_cast<const Frame*>(completion.getFrame());
     if (!frame) {
       throw cRuntimeError{"Received signal for %s message, expected ResponseFrame", frame->getClassName()};
     }
@@ -82,10 +77,7 @@ void AnchorApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
   const auto& frame = completion.getFrame();
   if (pollFrameName == frame->getName()) {
     const auto& pollRxBeginTimestamp = completion.getOperationBeginClockTimestamp();
-    EV_INFO << "POLL reception started at " << formatTimestamp(pollRxBeginTimestamp) << " and finished at "
-            << formatTimestamp(clockTime()) << endl;
-
-    const auto frame = dynamic_cast<const PollFrame*>(completion.getFrame());
+    const auto frame = dynamic_cast<const Frame*>(completion.getFrame());
     if (!frame) {
       throw cRuntimeError{"Received signal for %s message, expected PollFrame", frame->getClassName()};
     }
@@ -103,10 +95,10 @@ void AnchorApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
   }
 }
 
-void AnchorApplication::handlePollFrame(std::unique_ptr<PollFrame> pollFrame)
+void AnchorApplication::handlePollFrame(std::unique_ptr<Frame> pollFrame)
 {
   const auto& mobileAddress = pollFrame->getSrc();
-  auto responseFrame = createFrame<ResponseFrame>(mobileAddress, responseFrameName.c_str());
+  auto responseFrame = createFrame<Frame>(mobileAddress, responseFrameName.c_str());
   responseFrame->setBitLength(10);
   responseFrame->setSequenceNumber(pollFrame->getSequenceNumber());
 

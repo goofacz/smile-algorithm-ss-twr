@@ -17,7 +17,7 @@
 
 #include <IdealApplication.h>
 #include <Logger.h>
-#include "PollFrame_m.h"
+#include "Frame_m.h"
 
 namespace smile {
 namespace algorithm {
@@ -43,7 +43,7 @@ class AnchorApplication : public smile::IdealApplication
 
   void handleRxCompletionSignal(const smile::IdealRxCompletion& completion) override;
 
-  void handlePollFrame(std::unique_ptr<PollFrame> pollFrame);
+  void handlePollFrame(std::unique_ptr<Frame> pollFrame);
 
   static const std::string pollFrameName;
   static const std::string responseFrameName;

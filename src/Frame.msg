@@ -21,7 +21,7 @@ namespace smile::algorithm::ss_twr;
 
 packet inet::IdealMacFrame;
 
-packet ResponseFrame extends inet::IdealMacFrame
+packet Frame extends inet::IdealMacFrame
 {
 	unsigned long sequenceNumber = 0;
 }

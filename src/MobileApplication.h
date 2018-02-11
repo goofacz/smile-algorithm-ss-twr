@@ -17,7 +17,6 @@
 
 #include <IdealApplication.h>
 #include <Logger.h>
-#include "ResponseFrame_m.h"
 
 namespace smile {
 namespace algorithm {
@@ -51,6 +50,7 @@ class MobileApplication : public smile::IdealApplication
   static const std::string responseFrameName;
 
   std::unique_ptr<cMessage> rxTimeoutTimerMessage;
+  std::unique_ptr<cMessage> startRangingMessage;
   std::vector<inet::MACAddress> anchorAddresses;
 
   SimTime rangingRxTimeout;
