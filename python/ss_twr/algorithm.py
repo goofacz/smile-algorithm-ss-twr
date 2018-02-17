@@ -72,7 +72,7 @@ def localize_mobile(mobile_node, anchors, mobile_frames):
         position, _, _, _ = np.linalg.lstsq(A, B, rcond=None)
 
         results[round_i, "position_2d"] = position[0:2]
-        results[round_i, "begin_true_position_2d"] = round_poll_frames[0,  "begin_true_position_2d"]
+        results[round_i, "begin_true_position_2d"] = round_poll_frames[0, "begin_true_position_2d"]
         results[round_i, "end_true_position_2d"] = round_response_frames[2, "end_true_position_2d"]
 
     return results

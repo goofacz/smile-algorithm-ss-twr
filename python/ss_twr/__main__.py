@@ -15,6 +15,7 @@
 
 import argparse
 
+import smile.analysis as sa
 from ss_twr.simulation import Simulation
 
 if __name__ == '__main__':
@@ -26,5 +27,7 @@ if __name__ == '__main__':
 
     simulation = Simulation()
     results = simulation.run_offline(logs_directory_path)
-    #  TODO Process results
-    pass
+
+    unique_results = sa.obtain_unique_results(results)
+    sa.absolute_position_error_surface(unique_results)
+    sa.absolute_position_error_histogram(unique_results)

@@ -13,15 +13,16 @@
 # along with this program.  If not, see http:#www.gnu.org/licenses/.
 #
 
-import smile.simulation
 import os.path
+
 import numpy as np
 
-from ss_twr.algorithm import localize_mobile
-from ss_twr.anchors import Anchors
+import smile.simulation
 from smile.frames import Frames
 from smile.nodes import Nodes
 from smile.results import Results
+from ss_twr.algorithm import localize_mobile
+from ss_twr.anchors import Anchors
 
 
 class Simulation(smile.simulation.Simulation):
