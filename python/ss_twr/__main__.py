@@ -14,14 +14,8 @@
 #
 
 import argparse
-import os.path
 
-import numpy as np
-
-from algorithm import localize_mobile
-from anchors import Anchors
-from smile.frames import Frames
-from smile.nodes import Nodes
+from ss_twr.simulation import Simulation
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process Single Sided Two-Way ranging data.')
@@ -30,17 +24,7 @@ if __name__ == '__main__':
 
     logs_directory_path = arguments.logs_directory_path[0]
 
-    # Load data from CSV files
-    anchors = Anchors.load_csv(os.path.join(logs_directory_path, 'ss_twr_anchors.csv'))
-    mobiles = Nodes.load_csv(os.path.join(logs_directory_path, 'ss_twr_mobiles.csv'))
-    mobile_frames = Frames.load_csv(os.path.join(logs_directory_path, 'ss_twr_mobile_frames.csv'))
-
-    results = None
-    for mobile_node in mobiles:
-        mobile_results = localize_mobile(mobile_node, anchors, mobile_frames)
-        if results is None:
-            results = mobile_results
-        else:
-            results = np.concatenate((results, mobile_results), axis=0)
-
-    pass  # TODO
+    simulation = Simulation()
+    results = simulation.run_offline(logs_directory_path)
+    #  TODO Process results
+    pass
