@@ -13,6 +13,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+#include <inet/common/ModuleAccess.h>
 #include <utilities.h>
 #include <algorithm>
 
@@ -48,13 +49,11 @@ void MobileApplication::initialize(int stage)
   }
 
   if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
-    auto& logger = getLogger();
-    const auto handle = logger.obtainHandle("mobiles");
+    auto* mobilesLog = inet::getModuleFromPar<smile::Logger>(par("mobilesLoggerModule"), this, true);
     const auto entry = csv_logger::compose(getMacAddress(), getCurrentTruePosition());
-    logger.append(handle, entry);
+    mobilesLog->append(entry);
 
-    std::string handleName{"mobiles_beacons"};
-    framesLog = logger.obtainHandle("mobile_frames");
+    framesLog = inet::getModuleFromPar<smile::Logger>(par("mobileFramesLoggerModule"), this, true);
 
     rxTimeoutTimerMessage = std::make_unique<cMessage>("Ranging RX timeout");
     startRangingMessage = std::make_unique<cMessage>("Start ranging");
@@ -99,9 +98,8 @@ void MobileApplication::handleTxCompletionSignal(const smile::IdealTxCompletion&
       throw cRuntimeError{"Received signal for %s message, expected PollFrame", frame->getClassName()};
     }
 
-    auto& logger = getLogger();
     const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
-    logger.append(framesLog, entry);
+    framesLog->append(entry);
   }
   else {
     throw cRuntimeError{"Received TX completion signal for unexpected packet of type %s and name \"%s\"",
@@ -120,9 +118,8 @@ void MobileApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
       throw cRuntimeError{"Received signal for %s message, expected ResponseFrame", frame->getClassName()};
     }
 
-    auto& logger = getLogger();
     const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
-    logger.append(framesLog, entry);
+    framesLog->append(entry);
   }
   else {
     throw cRuntimeError{"Received RX completion signal for unexpected packet of type %s and name \"%s\"",

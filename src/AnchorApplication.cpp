@@ -17,6 +17,7 @@
 #include "Frame_m.h"
 
 #include <CsvLogger.h>
+#include <inet/common/ModuleAccess.h>
 #include <utilities.h>
 
 namespace smile {
@@ -37,12 +38,11 @@ void AnchorApplication::initialize(int stage)
   }
 
   if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
-    auto& logger = getLogger();
-    const auto handle = logger.obtainHandle("anchors");
+    auto* anchorsLog = inet::getModuleFromPar<smile::Logger>(par("anchorsLoggerModule"), this, true);
     const auto entry = csv_logger::compose(getMacAddress(), getCurrentTruePosition(), messageProcessingTime);
-    logger.append(handle, entry);
+    anchorsLog->append(entry);
 
-    framesLog = logger.obtainHandle("anchor_frames");
+    framesLog = inet::getModuleFromPar<smile::Logger>(par("anchorFramesLoggerModule"), this, true);
   }
 }
 
@@ -61,9 +61,8 @@ void AnchorApplication::handleTxCompletionSignal(const smile::IdealTxCompletion&
       throw cRuntimeError{"Received signal for %s message, expected ResponseFrame", frame->getClassName()};
     }
 
-    auto& logger = getLogger();
     const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
-    logger.append(framesLog, entry);
+    framesLog->append(entry);
   }
   else {
     throw cRuntimeError{"Received TX completion signal for unexpected packet of type %s and name \"%s\"",
@@ -81,9 +80,8 @@ void AnchorApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
       throw cRuntimeError{"Received signal for %s message, expected PollFrame", frame->getClassName()};
     }
 
-    auto& logger = getLogger();
     const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
-    logger.append(framesLog, entry);
+    framesLog->append(entry);
 
     responseTxClockTime = clockTime() + messageProcessingTime;
   }

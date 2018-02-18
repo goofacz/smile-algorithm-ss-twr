@@ -50,7 +50,7 @@ class AnchorApplication : public smile::IdealApplication
 
   SimTime messageProcessingTime;
   SimTime responseTxClockTime;
-  smile::Logger::Handle framesLog;
+  smile::Logger* framesLog{nullptr};
 };
 
 }  // namespace ss_twr

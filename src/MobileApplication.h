@@ -56,7 +56,7 @@ class MobileApplication : public smile::IdealApplication
   SimTime rangingRxTimeout;
   SimTime pollTxBeginTimestamp;
   SimTime responseRxBeginTimestamp;
-  smile::Logger::Handle framesLog;
+  smile::Logger* framesLog{nullptr};
   unsigned long sequenceNumber{0};
 };
 
