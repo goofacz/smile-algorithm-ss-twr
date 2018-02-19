@@ -74,7 +74,6 @@ void AnchorApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
 {
   const auto& frame = completion.getFrame();
   if (pollFrameName == frame->getName()) {
-    const auto& pollRxBeginTimestamp = completion.getOperationBeginClockTimestamp();
     const auto frame = dynamic_cast<const Frame*>(completion.getFrame());
     if (!frame) {
       throw cRuntimeError{"Received signal for %s message, expected PollFrame", frame->getClassName()};
@@ -83,7 +82,8 @@ void AnchorApplication::handleRxCompletionSignal(const smile::IdealRxCompletion&
     const auto entry = smile::csv_logger::compose(getMacAddress(), completion, frame->getSequenceNumber());
     framesLog->append(entry);
 
-    responseTxClockTime = clockTime() + messageProcessingTime;
+    const auto& pollRxBeginTimestamp = completion.getOperationBeginClockTimestamp();
+    responseTxClockTime = pollRxBeginTimestamp + messageProcessingTime;
   }
   else {
     throw cRuntimeError{"Received RX completion signal for unexpected packet of type %s and name \"%s\"",

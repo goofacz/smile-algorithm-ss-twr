@@ -18,6 +18,7 @@ import scipy.constants as scc
 
 from smile.filter import Filter
 from smile.results import Results
+from smile.algorithms.tof import *
 
 
 def localize_mobile(mobile_node, anchors, mobile_frames):
@@ -41,7 +42,7 @@ def localize_mobile(mobile_node, anchors, mobile_frames):
 
     sequence_numbers_triples = _lookup_sequence_number_triples(poll_frames["sequence_number"],
                                                                response_frames["sequence_number"])
-    results = Results.create_array(len(sequence_numbers_triples), mac_address=mobile_node["mac_address"])
+    results = Results.create_array(1, mac_address=mobile_node["mac_address"])
 
     for round_i in range(len(sequence_numbers_triples)):
         sequence_numbers = sequence_numbers_triples[round_i]
@@ -55,27 +56,15 @@ def localize_mobile(mobile_node, anchors, mobile_frames):
         tof -= processing_delay
         tof /= 2
 
-        distances = np.zeros((3, 2))
-        distances[:, 0] = tof * c
-        distances[:, 1] = round_response_frames["destination_mac_address"]
+        distances = np.zeros((3, ))
+        distances[:] = tof * c
 
-        A = np.zeros((3, 3))
-        A[:, (0, 1)] = -2 * anchors[0:3, "position_2d"]
-        A[:, 2] = 1
-
-        B = np.zeros((3, 3))
-        B[:, 0] = distances[:, 0]
-        B[:, (1, 2)] = anchors[0:3, "position_2d"]
-        B = np.power(B, 2)
-        B = B[:, 0] - B[:, 1] - B[:, 2]
-
-        position, _, _, _ = np.linalg.lstsq(A, B, rcond=None)
+        position = simple_least_squares(anchors[0:3, "position_2d"], distances)
 
         results[round_i, "position_2d"] = position[0:2]
         results[round_i, "begin_true_position_2d"] = round_poll_frames[0, "begin_true_position_2d"]
         results[round_i, "end_true_position_2d"] = round_response_frames[2, "end_true_position_2d"]
-
-    return results
+        return results
 
 
 def _lookup_sequence_number_triples(poll_sequence_numbers, response_sequence_numbers):
