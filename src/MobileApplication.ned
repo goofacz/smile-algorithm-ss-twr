@@ -20,7 +20,7 @@ simple MobileApplication extends IdealApplication
 {
     parameters:
         @class(smile::algorithm::ss_twr::MobileApplication);
-        int rangingRxTimeout = default(15ms) @unit(ms);
+        int rangingRxTimeout = default(2ms) @unit(ms);
         string mobilesLoggerModule = default("mobilesLog");
         string mobileFramesLoggerModule = default("mobileFramesLog");
 }

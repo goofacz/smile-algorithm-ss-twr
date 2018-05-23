@@ -20,7 +20,7 @@ simple AnchorApplication extends IdealApplication
 {
     parameters:
         @class(smile::algorithm::ss_twr::AnchorApplication);
-        int messageProcessingTime = default(10ms) @unit(ms);
+        int messageProcessingTime = default(1ms) @unit(ms);
         string anchorsLoggerModule = default("anchorsLog");
         string anchorFramesLoggerModule = default("anchorFramesLog");
 }
