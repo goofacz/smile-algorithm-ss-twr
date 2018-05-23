@@ -45,7 +45,7 @@ void MobileApplication::initialize(int stage)
   IdealApplication::initialize(stage);
 
   if (stage == inet::INITSTAGE_LOCAL) {
-    rangingRxTimeout = SimTime{par("rangingRxTimeout").longValue(), SIMTIME_MS};
+    rangingRxTimeout = SimTime{par("rangingRxTimeout").intValue(), SIMTIME_MS};
   }
 
   if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
@@ -82,7 +82,7 @@ void MobileApplication::handleIncommingMessage(cMessage* newMessage)
 {
   std::unique_ptr<cMessage>{newMessage};
 
-  const auto nextRangingBeginTimestamp = clockTime() + SimTime{5, SIMTIME_MS};
+  const auto nextRangingBeginTimestamp = clockTime() + SimTime{1, SIMTIME_MS};
   scheduleAt(nextRangingBeginTimestamp, startRangingMessage.get());
   cancelEvent(rxTimeoutTimerMessage.get());
 }

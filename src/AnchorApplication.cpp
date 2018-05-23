@@ -34,7 +34,7 @@ void AnchorApplication::initialize(int stage)
   IdealApplication::initialize(stage);
 
   if (stage == inet::INITSTAGE_LOCAL) {
-    messageProcessingTime = SimTime{par("messageProcessingTime").longValue(), SIMTIME_MS};
+    messageProcessingTime = SimTime{par("messageProcessingTime").intValue(), SIMTIME_MS};
   }
 
   if (stage == inet::INITSTAGE_APPLICATION_LAYER) {
