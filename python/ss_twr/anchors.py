@@ -14,15 +14,19 @@
 #
 
 import numpy as np
+import pandas as pd
 
 from smile.nodes import Nodes
 
 
 class Anchors(Nodes):
-    def __init__(self, *args):
-        super(Anchors, self).__init__()
-        self.column_names["message_processing_time"] = 4
+    @classmethod
+    def load_csv(cls, file_path):
+        columns = cls.__get_columns()
+        return pd.read_csv(file_path, names=columns.keys(), dtype=columns)
 
-    @staticmethod
-    def load_csv(file_path):
-        return Anchors(np.loadtxt(file_path, delimiter=',', ndmin=2))
+    @classmethod
+    def __get_columns(cls):
+        columns = super(cls).__get_columns()
+        columns['message_processing_time'] = np.int64
+        return columns
