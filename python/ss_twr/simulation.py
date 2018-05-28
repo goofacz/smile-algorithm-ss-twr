@@ -17,15 +17,15 @@ import importlib
 import os.path
 
 import numpy as np
+import scipy.constants as scc
 
 import smile.area as sarea
 import smile.simulation as ssimulation
 from smile.filter import Filter
 from smile.frames import Frames
 from smile.nodes import Nodes
-from smile.results import Results
+from smile.results import Results, Result
 from ss_twr.anchors import Anchors
-import scipy.constants as scc
 
 
 class Simulation(ssimulation.Simulation):
@@ -48,43 +48,46 @@ class Simulation(ssimulation.Simulation):
         mobiles = Nodes.load_csv(os.path.join(directory_path, 'ss_twr_mobiles.csv'))
         mobile_frames = Frames.load_csv(os.path.join(directory_path, 'ss_twr_mobile_frames.csv'))
 
-        results = None
+        results = []
         for mobile_node in mobiles:
             mobile_results = self._localize_mobile(mobile_node, anchors, mobile_frames)
-            if results is None:
-                results = mobile_results
-            else:
-                results = Results(np.concatenate((results, mobile_results), axis=0))
+            results.extend(mobile_results)
 
+        results = Results.create_array(results)
         return results, anchors
 
     def _localize_mobile(self, mobile_node, anchors, mobile_frames):
         # Construct POLL frames filter, i.e. transmitted frames ('TX' directions) sent by mobile node
-        data_filter = Filter()
-        data_filter.equal("direction", hash('TX'))
-        data_filter.equal("source_mac_address", mobile_node["mac_address"])
-        poll_frames = data_filter.execute(mobile_frames)
+        poll_frames = Filter(mobile_frames). \
+            equal("source_mac_address", mobile_node["mac_address"]). \
+            equal("direction", hash('TX')). \
+            finish()
 
         # Construct REPONSE frames filter, i.e. transmitted frames ('RX' directions) sent to mobile node
-        data_filter = Filter()
-        data_filter.equal("direction", hash('RX'))
-        data_filter.equal("destination_mac_address", mobile_node["mac_address"])
-        response_frames = data_filter.execute(mobile_frames)
+        response_frames = Filter(mobile_frames). \
+            equal("destination_mac_address", mobile_node["mac_address"]). \
+            equal("direction", hash('RX')). \
+            finish()
 
         assert (np.unique(anchors["message_processing_time"]).shape == (1,))
         processing_delay = anchors[0, "message_processing_time"]
 
-        sequence_numbers_triples = self._lookup_sequence_number_triples(poll_frames["sequence_number"],
-                                                                        response_frames["sequence_number"])
-        results = Results.create_array(1, mac_address=mobile_node["mac_address"])
+        # FIXME
+        # sequence_numbers_triples = self._lookup_sequence_number_triples(poll_frames["sequence_number"],
+        #                                                                response_frames["sequence_number"])
+        sequence_numbers_triples = [(0, 1, 2), ]
+
+        results = []  # Results.create_array(1, mac_address=mobile_node["mac_address"])
 
         for round_i in range(len(sequence_numbers_triples)):
             sequence_numbers = sequence_numbers_triples[round_i]
 
-            frames_filter = Filter()
-            frames_filter.is_in("sequence_number", sequence_numbers)
-            round_poll_frames = frames_filter.execute(poll_frames)
-            round_response_frames = frames_filter.execute(response_frames)
+            round_poll_frames = Filter(poll_frames). \
+                is_in("sequence_number", sequence_numbers). \
+                finish()
+            round_response_frames = Filter(response_frames). \
+                is_in("sequence_number", sequence_numbers). \
+                finish()
 
             tof = round_response_frames["begin_clock_timestamp"] - round_poll_frames["begin_clock_timestamp"]
             tof -= processing_delay
@@ -94,11 +97,21 @@ class Simulation(ssimulation.Simulation):
             distances[:] = tof * self.c
 
             solver = self.Solver(anchors[0:3, "position_2d"], distances, self.solver_configuration)
-            position = solver.localize()
+            position = solver.localize()[0]  # FIXME
 
-            results[round_i, "position_2d"] = position[0:2]
-            results[round_i, "begin_true_position_2d"] = round_poll_frames[0, "begin_true_position_2d"]
-            results[round_i, "end_true_position_2d"] = round_response_frames[2, "end_true_position_2d"]
+            result = Result()
+            result.mac_address = mobile_node["mac_address"]
+            result.position_dimensions = 2
+            result.position_x = position[0]
+            result.position_y = position[1]
+            result.position_z = 0
+            result.begin_true_position_x = round_poll_frames[0, "begin_true_position_x"]
+            result.begin_true_position_y = round_poll_frames[0, "begin_true_position_y"]
+            result.begin_true_position_z = 0
+            result.end_true_position_x = round_response_frames[2, "end_true_position_x"]
+            result.end_true_position_y = round_response_frames[2, "end_true_position_y"]
+            result.end_true_position_z = 0
+            results.append(result)
 
         return results
 
