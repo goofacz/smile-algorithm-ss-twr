@@ -17,6 +17,7 @@ import importlib
 import os.path
 
 import numpy as np
+import scipy.constants as scc
 
 import smile.area as sarea
 import smile.simulation as ssimulation
@@ -25,7 +26,6 @@ from smile.frames import Frames
 from smile.nodes import Nodes
 from smile.results import Results
 from ss_twr.anchors import Anchors
-import scipy.constants as scc
 
 
 class Simulation(ssimulation.Simulation):
@@ -60,16 +60,16 @@ class Simulation(ssimulation.Simulation):
 
     def _localize_mobile(self, mobile_node, anchors, mobile_frames):
         # Construct POLL frames filter, i.e. transmitted frames ('TX' directions) sent by mobile node
-        data_filter = Filter()
-        data_filter.equal("direction", hash('TX'))
-        data_filter.equal("source_mac_address", mobile_node["mac_address"])
-        poll_frames = data_filter.execute(mobile_frames)
+        poll_frames = Filter(mobile_frames).\
+            equal("direction", hash('TX')). \
+            equal("source_mac_address", mobile_node["mac_address"]). \
+            finish()
 
         # Construct REPONSE frames filter, i.e. transmitted frames ('RX' directions) sent to mobile node
-        data_filter = Filter()
-        data_filter.equal("direction", hash('RX'))
-        data_filter.equal("destination_mac_address", mobile_node["mac_address"])
-        response_frames = data_filter.execute(mobile_frames)
+        response_frames = Filter(mobile_frames).\
+            equal("direction", hash('RX')). \
+            equal("destination_mac_address", mobile_node["mac_address"]).\
+            finish()
 
         assert (np.unique(anchors["message_processing_time"]).shape == (1,))
         processing_delay = anchors[0, "message_processing_time"]
@@ -81,10 +81,12 @@ class Simulation(ssimulation.Simulation):
         for round_i in range(len(sequence_numbers_triples)):
             sequence_numbers = sequence_numbers_triples[round_i]
 
-            frames_filter = Filter()
-            frames_filter.is_in("sequence_number", sequence_numbers)
-            round_poll_frames = frames_filter.execute(poll_frames)
-            round_response_frames = frames_filter.execute(response_frames)
+            round_poll_frames = Filter(poll_frames).\
+                is_in("sequence_number", sequence_numbers).\
+                finish()
+            round_response_frames = Filter(response_frames).\
+                is_in("sequence_number", sequence_numbers).\
+                finish()
 
             tof = round_response_frames["begin_clock_timestamp"] - round_poll_frames["begin_clock_timestamp"]
             tof -= processing_delay
