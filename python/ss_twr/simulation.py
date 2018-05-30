@@ -61,21 +61,24 @@ class Simulation(ssimulation.Simulation):
     def _localize_mobile(self, mobile_node, anchors, mobile_frames):
         # Construct POLL frames filter, i.e. transmitted frames ('TX' directions) sent by mobile node
         poll_frames = Filter(mobile_frames).\
-            equal("direction", hash('TX')). \
             equal("source_mac_address", mobile_node["mac_address"]). \
+            equal("direction", hash('TX')). \
             finish()
 
         # Construct REPONSE frames filter, i.e. transmitted frames ('RX' directions) sent to mobile node
         response_frames = Filter(mobile_frames).\
-            equal("direction", hash('RX')). \
             equal("destination_mac_address", mobile_node["mac_address"]).\
+            equal("direction", hash('RX')). \
             finish()
 
         assert (np.unique(anchors["message_processing_time"]).shape == (1,))
         processing_delay = anchors[0, "message_processing_time"]
 
-        sequence_numbers_triples = self._lookup_sequence_number_triples(poll_frames["sequence_number"],
-                                                                        response_frames["sequence_number"])
+        # FIXME
+        #sequence_numbers_triples = self._lookup_sequence_number_triples(poll_frames["sequence_number"],
+        #                                                                response_frames["sequence_number"])
+        sequence_numbers_triples = [(0, 1, 2),]
+
         results = Results.create_array(1, mac_address=mobile_node["mac_address"])
 
         for round_i in range(len(sequence_numbers_triples)):
@@ -96,7 +99,7 @@ class Simulation(ssimulation.Simulation):
             distances[:] = tof * self.c
 
             solver = self.Solver(anchors[0:3, "position_2d"], distances, self.solver_configuration)
-            position = solver.localize()
+            position = solver.localize()[0] # FIXME
 
             results[round_i, "position_2d"] = position[0:2]
             results[round_i, "begin_true_position_2d"] = round_poll_frames[0, "begin_true_position_2d"]
